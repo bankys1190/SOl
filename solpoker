@@ -1,0 +1,132 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { motion } from "framer-motion";
+import { useWallet, WalletProvider } from "@solana/wallet-adapter-react";
+
+export default function PokerLobby() {
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [leaderboardVisible, setLeaderboardVisible] = useState(false);
+  const [isJoining, setIsJoining] = useState(false); // สถานะการยืนยันการเข้าร่วมโต๊ะ
+  const { connected, publicKey, wallet, connect, disconnect } = useWallet();
+
+  const tables = [
+    { id: 1, name: "High Stakes Table", minBet: "10 BBAS", status: "Active", players: 5, timer: "02:30", prizePool: "500 BBAS", buyIn: "100 BBAS", blindLevels: "Small: 5 BBAS / Big: 10 BBAS", rake: "5%" },
+    { id: 2, name: "Casual Table", minBet: "2 BBAS", status: "Waiting", players: 2, timer: "--", prizePool: "50 BBAS", buyIn: "10 BBAS", blindLevels: "Small: 1 BBAS / Big: 2 BBAS", rake: "2%" },
+    { id: 3, name: "VIP Tournament", minBet: "50 BBAS", status: "Full", players: 6, timer: "00:45", prizePool: "1000 BBAS", buyIn: "200 BBAS", blindLevels: "Small: 10 BBAS / Big: 20 BBAS", rake: "3%" },
+  ];
+
+  const leaderboard = [
+    { rank: 1, player: "Player1", winnings: "500 BBAS" },
+    { rank: 2, player: "Player2", winnings: "400 BBAS" },
+    { rank: 3, player: "Player3", winnings: "300 BBAS" },
+  ];
+
+  useEffect(() => {
+    if (connected) {
+      console.log(`Wallet connected: ${publicKey.toBase58()}`);
+    } else {
+      console.log('Wallet not connected');
+    }
+  }, [connected, publicKey]);
+
+  const handleJoinTable = () => {
+    setIsJoining(true); // แสดงกล่องยืนยันการเข้าร่วม
+  };
+
+  const confirmJoin = () => {
+    // ฟังก์ชันที่จัดการการเข้าร่วมโต๊ะจริง
+    console.log(`Joining table: ${selectedTable.name}`);
+    setIsJoining(false); // ปิดกล่องยืนยัน
+  };
+
+  const cancelJoin = () => {
+    setIsJoining(false); // ปิดกล่องยืนยัน
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-8 flex flex-col items-center">
+      <h1 className="text-3xl font-bold mb-6">Solana Poker Lobby</h1>
+      <WalletMultiButton className="mb-6" />
+
+      {connected ? (
+        <div className="text-green-400 mb-6">
+          Connected to {wallet.adapter.name}
+          <Button onClick={() => disconnect()} className="ml-2 bg-red-600">Disconnect</Button>
+        </div>
+      ) : (
+        <Button onClick={() => connect()} className="mb-6 bg-blue-600">Connect Wallet</Button>
+      )}
+
+      <Button onClick={() => setLeaderboardVisible(!leaderboardVisible)} className="mb-6 bg-purple-600">
+        {leaderboardVisible ? "Hide Leaderboard" : "Show Leaderboard"}
+      </Button>
+
+      {leaderboardVisible && (
+        <div className="mb-6 p-4 bg-gray-800 rounded-xl w-full max-w-4xl">
+          <h3 className="text-xl font-semibold mb-4">Leaderboard</h3>
+          <div className="space-y-4">
+            {leaderboard.map((entry) => (
+              <div key={entry.rank} className="flex justify-between text-lg">
+                <span>#{entry.rank} {entry.player}</span>
+                <span>{entry.winnings}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+        {tables.map((table) => (
+          <motion.div
+            key={table.id}
+            whileHover={{ scale: 1.05 }}
+            className="cursor-pointer"
+            onClick={() => setSelectedTable(table)}
+          >
+            <Card className="bg-gray-800 p-4 rounded-2xl shadow-lg">
+              <CardContent>
+                <h2 className="text-xl font-semibold">{table.name}</h2>
+                <p className="text-sm text-gray-400">Min Bet: {table.minBet}</p>
+                <p className="text-sm text-green-400">Status: {table.status}</p>
+                <p className="text-sm text-yellow-400">Players: {table.players}/6</p>
+                <p className="text-sm text-red-400">Timer: {table.timer}</p>
+                <p className="text-sm text-blue-400">Prize Pool: {table.prizePool}</p>
+                <p className="text-sm text-purple-400">Buy-in: {table.buyIn}</p>
+                <p className="text-sm text-orange-400">Blind Levels: {table.blindLevels}</p>
+                <p className="text-sm text-pink-400">Rake: {table.rake}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {selectedTable && (
+        <div className="mt-6 p-4 bg-gray-800 rounded-xl">
+          <h3 className="text-lg">Joining: {selectedTable.name}</h3>
+          <p className="text-sm text-green-400">Status: {selectedTable.status}</p>
+          <p className="text-sm text-yellow-400">Players: {selectedTable.players}/6</p>
+          <p className="text-sm text-red-400">Timer: {selectedTable.timer}</p>
+          <p className="text-sm text-blue-400">Prize Pool: {selectedTable.prizePool}</p>
+          <p className="text-sm text-purple-400">Buy-in: {selectedTable.buyIn}</p>
+          <p className="text-sm text-orange-400">Blind Levels: {selectedTable.blindLevels}</p>
+          <p className="text-sm text-pink-400">Rake: {selectedTable.rake}</p>
+          <Button className="mt-3 bg-blue-600" onClick={handleJoinTable}>
+            Enter Table
+          </Button>
+        </div>
+      )}
+
+      {isJoining && (
+        <div className="mt-6 p-4 bg-gray-700 rounded-xl w-full max-w-md mx-auto text-center">
+          <h3 className="text-lg mb-4">Are you sure you want to join {selectedTable.name}?</h3>
+          <div className="flex justify-around">
+            <Button onClick={confirmJoin} className="bg-green-600">Yes</Button>
+            <Button onClick={cancelJoin} className="bg-red-600">No</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
